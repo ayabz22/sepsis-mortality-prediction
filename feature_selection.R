@@ -1,3 +1,11 @@
+# ============================================================
+# Biomarker Feature Importance Analysis
+# 
+# This script uses Random Forest and XGBoost to identify
+# the most important biomarkers associated with mortality
+# in pediatric sepsis.
+# ============================================================
+
 # Load required packages
 library(randomForest)
 library(xgboost)
@@ -20,7 +28,6 @@ clinical_scores <- c("lods_score", "qsofa", "sick_score")
 
 
 # Prepare dataset (remove missing values in biomarkers + outcome)
-df$mort_inhosp
 df <- df %>%
   mutate(mort_inhosp = factor(mort_inhosp, levels = c("Survived", "Died")))
 df_clean <- df %>%
