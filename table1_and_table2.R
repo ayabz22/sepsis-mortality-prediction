@@ -1,27 +1,21 @@
 # ============================================================
 # Table 1A (Clinical/Baseline) by Survival Status
-# + Vaccination QC checks + FIXED vaccination coding (0=Yes, 1=No)
-# + Combined altered mental status
-# + Uses CONTINUOUS SICK SCORE (sick_score_cont) in Table 1
-# + Forces LODS, qSOFA, and SICK continuous score to display as median (IQR)
-# + Export Table 1A to Excel (.xlsx)
-# (Biomarkers later)
 # ============================================================
-
-# --- Setup ---
-setwd("/Users/ayaboubezari/desktop/datasets")
-df <- read.csv("finalized_dataset.csv", stringsAsFactors = FALSE)
-exclude_ids <- c(196, 351, 668, 884, 917)
-
-df <- df %>%
-  filter(!record_id %in% exclude_ids)
 library(tidyverse)
 library(gtsummary)
 library(dplyr)
 library(openxlsx)
 
+# Set-up dataset and remove excluded IDs 
+# Data loaded from finalized_dataset.csv
+df <- read.csv("finalized_dataset.csv", stringsAsFactors = FALSE)
+exclude_ids <- c(196, 351, 668, 884, 917)
+
+df <- df %>%
+  filter(!record_id %in% exclude_ids)
+
 # ------------------------------------------------------------
-# 1) Create survival group
+# 1) Create survival group (survived vs died)
 # ------------------------------------------------------------
 df <- df %>%
   mutate(
@@ -33,7 +27,7 @@ df <- df %>%
     survival_group = factor(survival_group, levels = c("Survivors", "Non-Survivors"))
   )
 
-# Restrict to Table 1 cohort (non-missing survival status)
+# Keep only patients with known survival status for Table 1
 df_t1 <- df %>% filter(!is.na(survival_group))
 
 # Ns for headers
@@ -42,16 +36,8 @@ n_non   <- sum(df_t1$survival_group == "Non-Survivors", na.rm = TRUE)
 n_total <- nrow(df_t1)
 
 # ------------------------------------------------------------
-# 2) Vaccination QC + fixed recode (0=Yes, 1=No)
+# 2) Check vaccination variable and recode (0 = Yes, 1 = No)
 # ------------------------------------------------------------
-cat("\n===== Vaccination (immun) raw distribution (FULL DF) =====\n")
-print(table(df$immun, useNA = "ifany"))
-cat("\n===== Vaccination (immun) raw proportions (FULL DF) =====\n")
-print(round(prop.table(table(df$immun, useNA = "ifany")) * 100, 1))
-
-cat("\n===== Vaccination (immun) by survival_group (Table1 cohort) =====\n")
-print(table(df_t1$immun, df_t1$survival_group, useNA = "ifany"))
-
 df_t1 <- df_t1 %>%
   mutate(
     immun_clean = case_when(
@@ -83,11 +69,8 @@ vax_summary <- tibble(
   )
 )
 
-cat("\n===== Vaccination summary (FIXED) =====\n")
-print(vax_summary)
-
 # ------------------------------------------------------------
-# 3) Combined altered mental status (anything less than Alert)
+# 3) Create altered mental status variable (anything not "Alert")
 # ------------------------------------------------------------
 df_t1 <- df_t1 %>%
   mutate(
@@ -99,17 +82,9 @@ df_t1 <- df_t1 %>%
     ams = factor(ams, levels = c("Alert", "Altered"))
   )
 
-# ------------------------------------------------------------
-# 4) Ensure continuous SICK score exists
-#    (This assumes you already created sick_score_cont earlier.)
-#    Optional safeguard: stop if missing.
-# ------------------------------------------------------------
-if (!("sick_score_cont" %in% names(df_t1))) {
-  stop("sick_score_cont not found in df. Create it first, then rerun Table 1.")
-}
 
 # ------------------------------------------------------------
-# 5) Variables for Table 1A (NO vital signs) + includes severity scores
+# 4) Variables for Table 1A (NO vital signs) + includes severity scores
 #    - LODS as total score (median/IQR)
 #    - SICK continuous (median/IQR)
 #    - qSOFA as total score (median/IQR)
@@ -136,8 +111,8 @@ table1a_vars <- c(
 )
 
 # ------------------------------------------------------------
-# 6) Build Table 1A (gtsummary)
-#    Force score variables to be continuous (median/IQR)
+# 5) Build Table 1A using gtsummary
+#    Treat severity scores as continuous (report median/IQR)
 # ------------------------------------------------------------
 tbl_1a <- df_t1 %>%
   select(all_of(c(table1a_vars, "survival_group"))) %>%
@@ -202,7 +177,7 @@ tbl_1a <- df_t1 %>%
   modify_caption("Table 1A. Baseline Clinical Characteristics by Survival Status")
 
 # ------------------------------------------------------------
-# 7) Export to Excel (.xlsx)
+# 6) Export Table 1A + QC checks to Excel
 # ------------------------------------------------------------
 tbl1a_df <- tbl_1a %>% as_tibble()
 
@@ -223,14 +198,8 @@ writeData(wb, "Vaccination_QC", raw_props_t1, startRow = nrow(vax_summary) + 4, 
 
 saveWorkbook(wb, "Table1A_Baseline_Clinical.xlsx", overwrite = TRUE)
 
-cat("\n✅ Saved: Table1A_Baseline_Clinical.xlsx (Sheets: Table1A, Vaccination_QC)\n")
-
-
-
-
-
 # ------------------------------------------------------------
-# Overall missingness across Table 1 variables
+# Quick check: overall missingness across Table 1 variables
 # ------------------------------------------------------------
 
 # Subset to Table 1 variables only
@@ -244,30 +213,14 @@ total_missing <- sum(is.na(df_missing))
 
 # Percent missing
 percent_missing <- round(100 * total_missing / total_cells, 2)
-
-cat("\nOverall missingness across Table 1 variables:", 
-    percent_missing, "%\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ============================================================
 # Table 1B (Biomarkers) by Survival Status
 # - Back-transforms NATURAL LOG biomarkers to RAW units: raw = exp(log_x)
 # - Reports median (IQR)
-# - Exports to Excel (.xlsx) in a separate sheet
+# - Exports to Excel 
 # ============================================================
 
-# --- Biomarkers currently stored as natural log ---
+# Biomarkers currently stored as natural log
 biomarkers_log <- c(
   "log_il10", "log_ang2", "log_il6", "log_il1ra", "log_il8",
   "log_tnfr1", "log_proc", "log_rage", "log_pai1", "log_icam1",
@@ -275,15 +228,14 @@ biomarkers_log <- c(
   "log_lact", "log_hco3"
 )
 
-# --- sanity check: make sure all exist ---
+# Check that all log biomarker variables exist
 missing_log_vars <- setdiff(biomarkers_log, names(df_t1))
 if (length(missing_log_vars) > 0) {
   stop("These log biomarker columns are missing from df_t1: ",
        paste(missing_log_vars, collapse = ", "))
 }
 
-# --- Create RAW (back-transformed) biomarker columns ---
-# Naming: raw_<marker>
+# Create RAW (back-transformed) biomarker columns
 df_t1 <- df_t1 %>%
   mutate(
     raw_il10  = exp(log_il10),
@@ -311,7 +263,7 @@ biomarkers_raw <- c(
   "raw_lact", "raw_hco3"
 )
 
-# --- Build Table 1B ---
+# Build Table 1B
 tbl_1b <- df_t1 %>%
   select(all_of(c(biomarkers_raw, "survival_group"))) %>%
   tbl_summary(
@@ -354,27 +306,14 @@ tbl_1b <- df_t1 %>%
   ) %>%
   modify_caption("Table 1B. Biomarkers by Survival Status (raw values)")
 
-# --- Export Table 1B to Excel (add a new sheet to your existing workbook) ---
+# Export Table 1B to Excel
 tbl1b_df <- tbl_1b %>% as_tibble()
 
-# If you're continuing from your Table 1A script and already created 'wb', just add a sheet:
-# (If not, createWorkbook() first.)
 if (!exists("wb")) wb <- createWorkbook()
 
-# Add/overwrite sheet safely
 if ("Table1B_Biomarkers" %in% names(wb)) removeWorksheet(wb, "Table1B_Biomarkers")
 addWorksheet(wb, "Table1B_Biomarkers")
 writeData(wb, "Table1B_Biomarkers", tbl1b_df)
 
 saveWorkbook(wb, "Table1A_1B.xlsx", overwrite = TRUE)
 
-cat("\n✅ Saved: Table1A_1B.xlsx (Sheets: Table1A, Vaccination_QC, Table1B_Biomarkers)\n")
-
-
-
-wilcox.test(raw_proc ~ survival_group, data = df_t1)
-
-
-df$record_id
-
-  
