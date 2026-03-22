@@ -1,8 +1,8 @@
 # ============================================================
-# FIXED PIPELINE:
-# - Select biomarker combos using CV on TRAIN only
-# - Fit final models on FULL TRAIN only
-# - Evaluate on TEST only (NO refitting on test)
+# Train/Test Modeling Pipeline for Biomarker Evaluation
+#
+# Model selection is done using cross-validation on the training set.
+# Final models are fit on the training data and evaluated on the test set.
 # ============================================================
 
 library(tidyverse)
@@ -11,7 +11,7 @@ library(boot)
 library(openxlsx)
 
 # ============================================================
-# 1) Outcome coding (0/1)
+# 1) # Create binary outcome (0 = survived, 1 = died)
 # ============================================================
 df$outcome      <- ifelse(df$mort_inhosp == "Died", 1, 0)
 test_df$outcome <- ifelse(test_df$mort_inhosp == "Died", 1, 0)
@@ -32,8 +32,7 @@ bio_label <- function(x) {
 }
 
 # ============================================================
-# 3) Cross-validated AUC (TRAINING ONLY)
-#    Fits within folds on train_k and evaluates on valid_k
+# 3) Function to compute cross-validated AUC on the training set
 # ============================================================
 cv_auc_ci <- function(formula, data, K = 5, seed = 123) {
   set.seed(seed)
@@ -100,8 +99,7 @@ make_candidates <- function(score) {
 }
 
 # ============================================================
-# 5) TRAINING: model selection using CV AUC only
-#    IMPORTANT: use a fixed complete-case dataset per score so N is consistent
+# 5) Select best biomarker combinations using CV on training data
 # ============================================================
 train_results <- data.frame()
 chosen_models <- list()
@@ -196,8 +194,7 @@ nri_continuous_ci_from_preds <- function(y, p_ref, p_new, R = 1000, seed = 123) 
 }
 
 # ============================================================
-# 7) TESTING: Evaluate reference + final models
-#    KEY: Fit on TRAIN, predict on TEST, compute metrics on TEST preds
+# 7) Evaluate final models on the test set (no refitting)
 # ============================================================
 test_results_full <- data.frame()
 
@@ -249,7 +246,7 @@ for (score in clinical_scores) {
 print(test_results_full)
 
 # ============================================================
-# 8) BRIDGE TABLE: Training CV AUC (selected) vs Test AUC (final)
+# 8) Bridge table: Training CV AUC (selected) vs Test AUC (final)
 # ============================================================
 selected_df <- data.frame(
   Clinical_Score = toupper(names(chosen_models)),
@@ -277,7 +274,7 @@ bridge_table <- train_final_cv %>%
 print(bridge_table)
 
 # ============================================================
-# 9) EXPORT EXCEL (3 sheets)
+# 9) Export excel (3 sheets)
 # ============================================================
 wb <- createWorkbook()
 
@@ -301,9 +298,9 @@ message("Saved Excel: Biomarker_Model_Tables_FIXED.xlsx")
 library(pROC)
 library(dplyr)
 
-score <- "lods_score"   # <-- LODS
+score <- "lods_score"  
 
-# Complete-case data for this score + biomarkers (consistent with your pipeline)
+# Complete-case data for this score + biomarkers 
 tmp_train <- df %>%
   select(outcome, all_of(score), all_of(biomarkers)) %>%
   na.omit()
@@ -312,7 +309,6 @@ tmp_test <- test_df %>%
   select(outcome, all_of(score), all_of(biomarkers)) %>%
   na.omit()
 
-# Pull selected model formulas from training CV selection
 l_base  <- chosen_models[[score]]$base_formula
 l_final <- chosen_models[[score]]$final_formula
 l_label <- chosen_models[[score]]$label
@@ -326,14 +322,13 @@ p_tr_base  <- predict(fit_base,  newdata = tmp_train, type = "response")
 p_tr_final <- predict(fit_final, newdata = tmp_train, type = "response")
 p_te_base  <- predict(fit_base,  newdata = tmp_test,  type = "response")
 p_te_final <- predict(fit_final, newdata = tmp_test,  type = "response")
-
-# ROC objects
+  
 roc_tr_base  <- roc(tmp_train$outcome, p_tr_base,  quiet = TRUE)
 roc_tr_final <- roc(tmp_train$outcome, p_tr_final, quiet = TRUE)
 roc_te_base  <- roc(tmp_test$outcome,  p_te_base,  quiet = TRUE)
 roc_te_final <- roc(tmp_test$outcome,  p_te_final, quiet = TRUE)
 
-# Save plot
+# save plot 
 png("ROC_LODS_training_vs_testing_FIXED.png", width = 1400, height = 1100, res = 150)
 
 plot.roc(roc_tr_base, legacy.axes = TRUE, lwd = 3,
@@ -356,4 +351,3 @@ legend("bottomright",
 
 dev.off()
 
-message("Saved ROC figure: ROC_LODS_training_vs_testing_FIXED.png")
