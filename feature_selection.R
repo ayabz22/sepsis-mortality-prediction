@@ -1,7 +1,4 @@
-
-# -------------------------------
-# Packages
-# -------------------------------
+# Load required packages
 library(randomForest)
 library(xgboost)
 library(caret)
@@ -20,11 +17,9 @@ biomarkers <- c(
 )
 
 clinical_scores <- c("lods_score", "qsofa", "sick_score")
-# Count NAs per column
 
-# -------------------------------
-# Prepare clean data (no NAs in biomarkers or outcome)
-# -------------------------------
+
+# Prepare dataset (remove missing values in biomarkers + outcome)
 df$mort_inhosp
 df <- df %>%
   mutate(mort_inhosp = factor(mort_inhosp, levels = c("Survived", "Died")))
@@ -33,9 +28,8 @@ df_clean <- df %>%
   filter(complete.cases(.))
 table(df_clean$mort_inhosp)
 
-# -------------------------------
+
 # Random Forest feature importance
-# -------------------------------
 set.seed(123)
 rf_model <- randomForest(
   mort_inhosp ~ ., 
@@ -54,9 +48,8 @@ rf_ranked <- data.frame(
   GiniImportance = rf_importance[, "MeanDecreaseGini"]
 ) %>% arrange(desc(GiniImportance))
 
-# -------------------------------
+
 # XGBoost feature importance
-# -------------------------------
 x <- as.matrix(df_clean[, biomarkers])
 y <- df_clean$mort_inhosp
 
@@ -95,9 +88,8 @@ xgb_ranked <- data.frame(
   XGBImportance = xgb_imp$Overall
 ) %>% arrange(desc(XGBImportance))
 
-# -------------------------------
+
 # Plot feature importance
-# -------------------------------
 # Random Forest
 ggplot(rf_ranked, aes(x = reorder(Biomarker, GiniImportance), y = GiniImportance)) +
   geom_col(fill = "#0073C2FF") +
@@ -110,12 +102,7 @@ ggplot(xgb_ranked, aes(x = reorder(Biomarker, XGBImportance), y = XGBImportance)
   coord_flip() +
   labs(title = "XGBoost Biomarker Importance", x = "Biomarker", y = "Importance Score")
 
-
-
-
-# -------------------------------
 # Save Random Forest plot
-# -------------------------------
 rf_plot <- ggplot(rf_ranked, aes(x = reorder(Biomarker, GiniImportance),
                                  y = GiniImportance)) +
   geom_col(fill = "#0073C2FF") +
@@ -135,9 +122,7 @@ ggsave(
   dpi = 300
 )
 
-# -------------------------------
 # Save XGBoost plot
-# -------------------------------
 xgb_plot <- ggplot(xgb_ranked, aes(x = reorder(Biomarker, XGBImportance),
                                    y = XGBImportance)) +
   geom_col(fill = "#EFC000FF") +
@@ -157,10 +142,7 @@ ggsave(
   dpi = 300
 )
 
-
-# -------------------------------
 # Export figures to Word
-# -------------------------------
 library(officer)
 
 doc <- read_docx() %>%
