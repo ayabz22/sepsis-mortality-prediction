@@ -1,8 +1,7 @@
-#The goal of this code was to compute internally validated predictive performance for:
-##Each biomarker alone
-##Each biomarker combined with a clinical score (qSOFA, LODS, Sick Score)
-##The metric used is AUC (area under the ROC curve), along with a 95% confidence interval.
-##Internal validation is done via 5-fold cross-validation, which simulates testing the model on “new” patients from the same dataset.
+# Evaluate predictive performance of biomarkers for in-hospital mortality
+# Compare biomarkers alone vs combined with clinical scores (qSOFA, LODS, SICK)
+# Use 5-fold cross-validation and report AUC with 95% CI
+
 library(caret)
 library(dplyr)
 library(pROC)
@@ -26,31 +25,14 @@ train_idx <- createDataPartition(
 
 df <- full_df[train_idx, ]
 test_df  <- full_df[-train_idx, ]
-
-
 df <- df %>%
   mutate(outcome = mort_inhosp)
 test_df <- test_df %>%
   mutate(outcome = mort_inhosp)
-colnames(df)
-library(pROC)
-library(dplyr)
 
-
-
-
-# THE REAL ONE 
-# =============================
-# Libraries
-# =============================
-library(dplyr)
-library(tibble)
-library(pROC)
-library(flextable)
-library(officer)
 
 # =============================
-# Parameters
+# Define biomarkers and clinical scores used in the analysis
 # =============================
 biomarkers <- c(
   "log_il10", "log_ang2", "log_il6", "log_il1ra", "log_il8",
@@ -69,7 +51,7 @@ k <- 5
 set.seed(123)
 
 # =============================
-# Function to compute CV AUC with 95% CI
+# Function to compute cross-validated AUC with 95% CI
 # =============================
 cv_auc_ci <- function(formula_str, data, k = 5) {
   vars_needed <- all.vars(as.formula(formula_str))
@@ -102,7 +84,7 @@ cv_auc_ci <- function(formula_str, data, k = 5) {
 }
 
 # =============================
-# Build final table
+# Loop through biomarkers and compute AUCs
 # =============================
 final_table <- tibble()
 
@@ -130,7 +112,6 @@ for (marker in biomarkers) {
 final_table <- final_table %>%
   arrange(desc(Alone_CV_AUC))
 
-# Optional: prettier biomarker names
 final_table <- final_table %>%
   mutate(Biomarker = case_when(
     Biomarker == "log_il10"  ~ "IL-10",
@@ -156,7 +137,6 @@ print(final_table)
 
 library(openxlsx)
 
-# Optional: rename columns to the final “table-ready” names before export
 final_xlsx <- final_table %>%
   dplyr::rename(
     `Biomarker` = Biomarker,
@@ -172,15 +152,12 @@ addWorksheet(wb, "Table")
 
 writeData(wb, "Table", final_xlsx)
 
-# Style header
 header_style <- createStyle(textDecoration = "bold", halign = "center", valign = "center", wrapText = TRUE)
 addStyle(wb, "Table", header_style, rows = 1, cols = 1:ncol(final_xlsx), gridExpand = TRUE)
 
-# Center all cells
 center_style <- createStyle(halign = "center", valign = "center", wrapText = TRUE)
 addStyle(wb, "Table", center_style, rows = 2:(nrow(final_xlsx) + 1), cols = 1:ncol(final_xlsx), gridExpand = TRUE)
 
-# Freeze header row + set column widths
 freezePane(wb, "Table", firstRow = TRUE)
 setColWidths(wb, "Table", cols = 1:ncol(final_xlsx), widths = "auto")
 
