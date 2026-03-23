@@ -11,7 +11,7 @@ library(boot)
 library(openxlsx)
 
 # ============================================================
-# 1) # Create binary outcome (0 = survived, 1 = died)
+# 1) # Create binary outcome
 # ============================================================
 df$outcome      <- ifelse(df$mort_inhosp == "Died", 1, 0)
 test_df$outcome <- ifelse(test_df$mort_inhosp == "Died", 1, 0)
