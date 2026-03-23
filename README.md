@@ -13,14 +13,14 @@ I investigated the relationship between clinical variables, immune biomarkers, a
 - `clinicalscores_biomarkers_table.R`  
  Evaluates biomarker predictive performance using 5-fold cross-validated AUC (with 95% CI), comparing biomarkers alone and in combination with clinical scores (qSOFA, LODS, SICK), and generates a summary results table for reporting.
 
+- `machine_learning_comparison.R`  
+  Compares logistic regression, LASSO, random forest, and gradient boosting across different biomarker and clinical score combinations using cross-validation and test-set AUC.
+
 - `Biomarker_combinations.R`  
   Selects optimal biomarker combinations using cross-validated AUC on training data, evaluates final model performance on the test set using AUC, ΔAUC, and NRI, and generates ROC curves comparing training and testing performance.
 
 - `tuning_finalmodel.R`
   Evaluates probability thresholds for the final logistic regression model and performs sensitivity analysis to assess how classification performance varies across nearby thresholds.
-
-- `machine_learning_comparison.R`  
-  Compares logistic regression, LASSO, random forest, and gradient boosting across different biomarker and clinical score combinations using cross-validation and test-set AUC.
 
 - `feature_selection.R`  
   Uses random forest and gradient boosting to assess biomarker importance.
