@@ -1,6 +1,6 @@
 # ============================================================
 # Compare logistic regression, LASSO, random forest, and GBM
-# for mortality prediction using the SAME dataset and predictors
+# for mortality prediction using the same dataset and predictors
 # ============================================================
 
 library(caret)
@@ -14,7 +14,7 @@ library(openxlsx)
 set.seed(123)
 
 # ----------------------------
-# 1) Load and prepare data
+# 1) Load data
 # ----------------------------
 full_df <- read.csv("finalized_dataset.csv", stringsAsFactors = FALSE)
 exclude_ids <- c(196, 351, 668, 884, 917)
@@ -22,25 +22,21 @@ exclude_ids <- c(196, 351, 668, 884, 917)
 full_df <- full_df %>%
   filter(!record_id %in% exclude_ids)
 
-# Choose the predictors you want to compare methods on
-# Example: final LODS model
 predictors <- c("lods_score", "log_trem1", "log_il8")
 
-# Keep only complete cases for the chosen predictors + outcome
-dat <- full_df %>%
+df <- full_df %>%
   select(mort_inhosp, all_of(predictors)) %>%
   filter(!is.na(mort_inhosp)) %>%
   na.omit()
 
-# Make outcome a factor with the EVENT level first for caret ROC
-dat$mort_inhosp <- factor(dat$mort_inhosp, levels = c("Died", "Survived"))
+df$mort_inhosp <- factor(df$mort_inhosp, levels = c("Died", "Survived"))
 
 # ----------------------------
 # 2) Train/test split
 # ----------------------------
-train_idx <- createDataPartition(dat$mort_inhosp, p = 0.7, list = FALSE)
-train_dat <- dat[train_idx, ]
-test_dat  <- dat[-train_idx, ]
+train_idx <- createDataPartition(df$mort_inhosp, p = 0.7, list = FALSE)
+train_dat <- df[train_idx, ]
+test_dat  <- df[-train_idx, ]
 
 # ----------------------------
 # 3) Cross-validation setup
@@ -117,19 +113,23 @@ fit_gbm <- train(
 # ----------------------------
 cv_results <- bind_rows(
   fit_glm$results %>%
-    slice_max(ROC, n = 1) %>%
+    arrange(desc(ROC)) %>%
+    slice(1) %>%
     mutate(Method = "Logistic Regression"),
-  
+
   fit_lasso$results %>%
-    slice_max(ROC, n = 1) %>%
+    arrange(desc(ROC), lambda) %>%
+    slice(1) %>%
     mutate(Method = "LASSO"),
-  
+
   fit_rf$results %>%
-    slice_max(ROC, n = 1) %>%
+    arrange(desc(ROC)) %>%
+    slice(1) %>%
     mutate(Method = "Random Forest"),
-  
+
   fit_gbm$results %>%
-    slice_max(ROC, n = 1) %>%
+    arrange(desc(ROC)) %>%
+    slice(1) %>%
     mutate(Method = "GBM")
 ) %>%
   select(Method, ROC, Sens, Spec)
@@ -141,12 +141,22 @@ print(cv_results)
 # ----------------------------
 get_test_auc <- function(fit, newdata, outcome_name = "mort_inhosp", positive = "Died") {
   probs <- predict(fit, newdata = newdata, type = "prob")[, positive]
-  roc_obj <- roc(newdata[[outcome_name]], probs, levels = c("Survived", "Died"), direction = "<")
+  roc_obj <- roc(
+    response = newdata[[outcome_name]],
+    predictor = probs,
+    levels = c("Survived", "Died"),
+    direction = "<"
+  )
   ci <- ci.auc(roc_obj)
-  
+
   tibble(
     Test_AUC = as.numeric(auc(roc_obj)),
-    Test_AUC_CI = sprintf("%.3f (%.3f-%.3f)", as.numeric(auc(roc_obj)), ci[1], ci[3])
+    Test_AUC_CI = sprintf(
+      "%.3f (%.3f-%.3f)",
+      as.numeric(auc(roc_obj)),
+      ci[1],
+      ci[3]
+    )
   )
 }
 
@@ -169,6 +179,12 @@ print(test_results)
 final_compare <- cv_results %>%
   rename(CV_AUC = ROC) %>%
   left_join(test_results, by = "Method") %>%
+  mutate(
+    CV_AUC = round(CV_AUC, 3),
+    Sens = round(Sens, 3),
+    Spec = round(Spec, 3),
+    Test_AUC = round(Test_AUC, 3)
+  ) %>%
   arrange(desc(Test_AUC))
 
 print(final_compare)
