@@ -5,8 +5,6 @@ This repository contains code from my Master’s capstone project in Health Data
 ## Project overview
 I investigated the relationship between clinical variables, immune biomarkers, and mortality outcomes. The primary goal was to determine whether biomarkers such as TREM-1, IL-8, and PCT improve predictive performance beyond standard clinical severity scores (LODS, qSOFA, and SICK).
 
-Several machine learning approaches (random forest, gradient boosting, and LASSO) were explored. While tree-based models achieved slightly higher test AUC, overall performance was comparable across methods. Logistic regression was selected as the primary modeling approach due to its interpretability and clinical applicability.
-
 ## Analysis workflow
 
 - `table1_and_table2.R`  
