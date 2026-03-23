@@ -8,19 +8,19 @@ I investigated the relationship between clinical variables, immune biomarkers, a
 ## Analysis workflow
 
 - `table1_and_table2.R`  
-  Generates baseline characteristics and biomarker summaries comparing survivors vs non-survivors.
-
-- `Biomarker_combinations.R`  
-  Evaluates predictive performance of biomarkers alone and in combination with clinical scores using cross-validated AUC.
+  Generates baseline clinical characteristics and biomarker summaries by survival status, including statistical comparisons between groups.
 
 - `clinicalscores_biomarkers_table.R`  
-  Builds final logistic regression models combining clinical scores and biomarkers.
+ Evaluates biomarker predictive performance using 5-fold cross-validated AUC (with 95% CI), comparing biomarkers alone and in combination with clinical scores (qSOFA, LODS, SICK), and generates a summary results table for reporting.
+
+- `Biomarker_combinations.R`  
+  Selects optimal biomarker combinations using cross-validated AUC on training data, evaluates final model performance on the test set using AUC, ΔAUC, and NRI, and generates ROC curves comparing training and testing performance.
 
 - `tuning_finalmodel.R`
   Evaluates probability thresholds for the final logistic regression model and performs sensitivity analysis to assess how classification performance varies across nearby thresholds.
 
 - `machine_learning_comparison.R`  
-  Compares logistic regression, LASSO, random forest, and gradient boosting models using cross-validation and test-set AUC.
+  Compares logistic regression, LASSO, random forest, and gradient boosting across different biomarker and clinical score combinations using cross-validation and test-set AUC.
 
 - `feature_selection.R`  
   Uses random forest and gradient boosting to assess biomarker importance.
