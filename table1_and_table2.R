@@ -28,7 +28,6 @@ df <- df %>%
 
 df_t1 <- df %>% filter(!is.na(survival_group))
 
-# this is the Ns for headers
 n_surv  <- sum(df_t1$survival_group == "Survivors", na.rm = TRUE)
 n_non   <- sum(df_t1$survival_group == "Non-Survivors", na.rm = TRUE)
 n_total <- nrow(df_t1)
