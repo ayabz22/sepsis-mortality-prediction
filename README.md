@@ -1,5 +1,5 @@
 ## Enhancing Mortality Prediction in Children with Sepsis in Tanzania: A Prospective Cohort Study Integrating Immune Biomarkers with Clinical Severity Scores
-This repository contains code from my capstone project, where I analyzed whether host biomarkers improve prediction of in-hospital mortality in children with sepsis when combined with clinical severity scores.
+This repository contains code from my Master’s capstone project in Health Data Science at UCSF, where I independently led the study, including the data analysis, modeling, and manuscript preparation. The project evaluates whether host biomarkers improve prediction of in-hospital mortality in children with sepsis when combined with clinical severity scores.
 
 ## Project overview
 In this project, I explored the relationship between clinical variables, biomarkers, and mortality outcomes. The goal was to evaluate whether adding biomarkers such as TREM-1, IL-8, and PCT improves predictive performance beyond standard clinical scores (LODS, qSOFA, SICK).
