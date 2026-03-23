@@ -3,7 +3,7 @@
 This repository contains code from my Master’s capstone project in Health Data Science at UCSF, where I independently led the study, including data analysis, modeling, and manuscript preparation. The project evaluates whether biomarkers improve prediction of in-hospital mortality in children with sepsis when combined with clinical severity scores.
 
 ## Project overview
-I investigated the relationship between clinical variables, immune biomarkers, and mortality outcomes. The primary goal was to determine whether biomarkers such as TREM-1, IL-8, and PCT improve predictive performance beyond standard clinical severity scores (LODS, qSOFA, and SICK).
+I investigated the relationship between clinical variables, immune biomarkers, and mortality outcomes. The primary goal was to determine whether biomarkers such as TREM-1, IL-8, and PCT improve predictive performance beyond standard clinical severity scores that include quick Sequential Organ Failure Assessment (qSOFA), Lambaréné Organ Dysfunction Score (LODS), and Signs of Inflammation in Children that Kill (SICK).
 
 ## Analysis workflow
 
