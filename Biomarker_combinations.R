@@ -77,21 +77,21 @@ biomarker_pairs <- list(
 make_candidates <- function(score) {
   candidates <- list()
   
-  # Reference
+  # reference
   candidates[["Reference"]] <- as.formula(paste("outcome ~", score))
   
-  # Single biomarkers
+  # single biomarkers
   for (b in biomarkers) {
     candidates[[bio_label(b)]] <- as.formula(paste("outcome ~", score, "+", b))
   }
   
-  # Pairs
+  # pairs
   for (pair in biomarker_pairs) {
     nm <- paste(bio_label(pair), collapse = " + ")
     candidates[[nm]] <- as.formula(paste("outcome ~", score, "+", paste(pair, collapse = " + ")))
   }
   
-  # All three
+  # all three
   candidates[["TREM-1 + PCT + IL-8"]] <-
     as.formula(paste("outcome ~", score, "+", paste(biomarkers, collapse = " + ")))
   
@@ -130,7 +130,7 @@ for (score in clinical_scores) {
   
   train_results <- bind_rows(train_results, score_tbl)
   
-  # Select best NON-reference model (by numeric CV AUC)
+  # this selects best NON-reference model (by numeric CV AUC)
   best_row <- score_tbl %>%
     filter(Biomarkers != "Reference") %>%
     arrange(desc(CV_AUC_num)) %>%
@@ -200,7 +200,6 @@ test_results_full <- data.frame()
 
 for (score in clinical_scores) {
   
-  # Use the same complete-case structure as training selection:
   tmp_train <- df %>%
     select(outcome, all_of(score), all_of(biomarkers)) %>%
     na.omit()
@@ -213,7 +212,7 @@ for (score in clinical_scores) {
   final_formula <- chosen_models[[score]]$final_formula
   label         <- chosen_models[[score]]$label
   
-  # Fit BOTH models on TRAIN ONLY
+  # Fit both models on TRAIN only
   fit_ref  <- glm(base_formula,  data = tmp_train, family = binomial)
   fit_new  <- glm(final_formula, data = tmp_train, family = binomial)
   
@@ -222,7 +221,7 @@ for (score in clinical_scores) {
   p_new <- predict(fit_new, newdata = tmp_test, type = "response")
   y     <- tmp_test$outcome
   
-  # Metrics computed on TEST preds
+  # Metrics evaluated on TEST preds
   ref_auc   <- auc_ci_from_preds(y, p_ref)
   final_auc <- auc_ci_from_preds(y, p_new)
   d_auc     <- delta_auc_from_preds(y, p_ref, p_new)
@@ -292,7 +291,6 @@ message("Saved Excel: Biomarker_Model_Tables_FIXED.xlsx")
 
 # ============================================================
 # ROC FIGURE (LODS only): TRAIN vs TEST, reference vs final
-# Fits on TRAIN, predicts on TRAIN + TEST (same coefficients)
 # ============================================================
 
 library(pROC)
@@ -300,7 +298,6 @@ library(dplyr)
 
 score <- "lods_score"  
 
-# Complete-case data for this score + biomarkers 
 tmp_train <- df %>%
   select(outcome, all_of(score), all_of(biomarkers)) %>%
   na.omit()
@@ -328,7 +325,6 @@ roc_tr_final <- roc(tmp_train$outcome, p_tr_final, quiet = TRUE)
 roc_te_base  <- roc(tmp_test$outcome,  p_te_base,  quiet = TRUE)
 roc_te_final <- roc(tmp_test$outcome,  p_te_final, quiet = TRUE)
 
-# save plot 
 png("ROC_LODS_training_vs_testing_FIXED.png", width = 1400, height = 1100, res = 150)
 
 plot.roc(roc_tr_base, legacy.axes = TRUE, lwd = 3,
