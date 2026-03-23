@@ -33,7 +33,7 @@ n_non   <- sum(df_t1$survival_group == "Non-Survivors", na.rm = TRUE)
 n_total <- nrow(df_t1)
 
 # ------------------------------------------------------------
-# 2) Check vaccination variable and recode (0 = Yes, 1 = No)
+# 2) Check vaccination variable and recode to 0 = Yes, 1 = No. 
 # ------------------------------------------------------------
 df_t1 <- df_t1 %>%
   mutate(
@@ -78,7 +78,6 @@ df_t1 <- df_t1 %>%
     ),
     ams = factor(ams, levels = c("Alert", "Altered"))
   )
-
 
 # ------------------------------------------------------------
 # 4) Variables for Table 1A (NO vital signs) + includes severity scores
