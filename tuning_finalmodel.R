@@ -1,15 +1,23 @@
+# ============================================================
+# Threshold Selection and Test-Set Evaluation
+#
+# This script fits the final logistic regression model on the
+# training set, evaluates candidate probability thresholds,
+# and then assesses the selected threshold on the test set.
+# ============================================================
+
 library(caret)
 library(dplyr)
 
 # -------------------------------
-# 1) Prepare data (TRAIN ONLY)
+# 1) Prepare training data 
 # -------------------------------
 vars <- c("outcome", "lods_score", "log_trem1", "log_il8")
 
 train_model_df <- df[complete.cases(df[, vars]), vars]
 
 # -------------------------------
-# 2) Fit final model on TRAIN
+# 2) Fit final model on training data 
 # -------------------------------
 fit <- glm(outcome ~ lods_score + log_trem1 + log_il8,
            data = train_model_df,
@@ -32,7 +40,7 @@ results <- data.frame(
 )
 
 # -------------------------------
-# 4) Loop through thresholds
+# 4) Evaluate training performance across thresholds 
 # -------------------------------
 for (i in seq_along(thresholds)) {
   
@@ -55,49 +63,20 @@ for (i in seq_along(thresholds)) {
   results$youden[i] <- sens + spec - 1
 }
 
-# -------------------------------
-# 5) View full threshold list
-# -------------------------------
-head(results, 20)      # first 20 thresholds
-tail(results, 20)      # last 20 thresholds
-
-# -------------------------------
-# 6) Sort by different criteria
-# -------------------------------
-
-# Highest Youden
-results %>% arrange(desc(youden)) %>% head(10)
-
-# Highest sensitivity
-results %>% arrange(desc(sensitivity)) %>% head(10)
-
-# Highest PPV
-results %>% arrange(desc(PPV)) %>% head(10)
-
-
-#0.13 was picked 
-# ============================================================
-# 5) Make sure outcome exists in TEST
-# ============================================================
-test_df$outcome <- ifelse(test_df$mort_inhosp == "Died", 1, 0)
+#Evaluate selected probability threshold 
 
 # ============================================================
-# 6) Prepare TEST data (complete cases only)
+# 5) Prepare TEST data
 # ============================================================
 vars <- c("outcome", "lods_score", "log_trem1", "log_il8")
 
 test_model_df <- test_df[complete.cases(test_df[, vars]), vars]
 
-# Predict probabilities on TEST
+# predict probabilities on TEST
 p_test <- predict(fit, newdata = test_model_df, type = "response")
 
-# Sanity check
-length(p_test)
-nrow(test_model_df)
-length(test_model_df$outcome)
-
 # ============================================================
-# 7) Helper function to compute metrics at a given threshold
+# 6) Helper function to calculate metrics at a given threshold
 # ============================================================
 get_metrics <- function(threshold, probs, outcome) {
   
@@ -119,13 +98,13 @@ get_metrics <- function(threshold, probs, outcome) {
 }
 
 # ============================================================
-# 8) Evaluate chosen threshold on TEST
+#7) Evaluate chosen threshold on TEST
 # ============================================================
 test_perf <- get_metrics(0.13, p_test, test_model_df$outcome)
 test_perf
 
 # ============================================================
-# 9) Sensitivity analysis on TEST: compare nearby thresholds
+# 8) Sensitivity analysis on TEST for nearby thresholds
 # ============================================================
 thresholds_to_check <- c(0.10, 0.12, 0.13, 0.15)
 
@@ -137,19 +116,3 @@ sens_analysis <- do.call(
 )
 
 sens_analysis
-
-# ============================================================
-# 10) Report how many TEST rows were dropped
-# ============================================================
-cat("Test rows total:", nrow(test_df), "\n")
-cat("Test rows used (complete cases):", nrow(test_model_df), "\n")
-cat("Test rows dropped due to missing predictors/outcome:",
-    nrow(test_df) - nrow(test_model_df), "\n")
-
-
-
-
-
-
-
-
