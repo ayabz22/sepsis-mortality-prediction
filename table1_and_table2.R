@@ -6,8 +6,7 @@ library(gtsummary)
 library(dplyr)
 library(openxlsx)
 
-# Set-up dataset and remove excluded IDs 
-# Data loaded from finalized_dataset.csv
+# Load data 
 df <- read.csv("finalized_dataset.csv", stringsAsFactors = FALSE)
 exclude_ids <- c(196, 351, 668, 884, 917)
 
@@ -27,10 +26,9 @@ df <- df %>%
     survival_group = factor(survival_group, levels = c("Survivors", "Non-Survivors"))
   )
 
-# Keep only patients with known survival status for Table 1
 df_t1 <- df %>% filter(!is.na(survival_group))
 
-# Ns for headers
+# this is the Ns for headers
 n_surv  <- sum(df_t1$survival_group == "Survivors", na.rm = TRUE)
 n_non   <- sum(df_t1$survival_group == "Non-Survivors", na.rm = TRUE)
 n_total <- nrow(df_t1)
@@ -177,7 +175,7 @@ tbl_1a <- df_t1 %>%
   modify_caption("Table 1A. Baseline Clinical Characteristics by Survival Status")
 
 # ------------------------------------------------------------
-# 6) Export Table 1A + QC checks to Excel
+# 6) Export to Excel
 # ------------------------------------------------------------
 tbl1a_df <- tbl_1a %>% as_tibble()
 
@@ -199,19 +197,13 @@ writeData(wb, "Vaccination_QC", raw_props_t1, startRow = nrow(vax_summary) + 4, 
 saveWorkbook(wb, "Table1A_Baseline_Clinical.xlsx", overwrite = TRUE)
 
 # ------------------------------------------------------------
-# Quick check: overall missingness across Table 1 variables
+# Check overall missingness 
 # ------------------------------------------------------------
 
-# Subset to Table 1 variables only
 df_missing <- df_t1 %>% select(all_of(table1a_vars))
-
-# Total number of cells
 total_cells <- nrow(df_missing) * ncol(df_missing)
-
-# Total missing values
 total_missing <- sum(is.na(df_missing))
-
-# Percent missing
+# % missing
 percent_missing <- round(100 * total_missing / total_cells, 2)
 # ============================================================
 # Table 1B (Biomarkers) by Survival Status
@@ -228,14 +220,12 @@ biomarkers_log <- c(
   "log_lact", "log_hco3"
 )
 
-# Check that all log biomarker variables exist
 missing_log_vars <- setdiff(biomarkers_log, names(df_t1))
 if (length(missing_log_vars) > 0) {
   stop("These log biomarker columns are missing from df_t1: ",
        paste(missing_log_vars, collapse = ", "))
 }
 
-# Create RAW (back-transformed) biomarker columns
 df_t1 <- df_t1 %>%
   mutate(
     raw_il10  = exp(log_il10),
