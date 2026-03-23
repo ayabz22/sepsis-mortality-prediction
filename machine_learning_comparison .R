@@ -110,7 +110,7 @@ for (comb in combinations) {
 
   missing_vars <- setdiff(c(comb, "mort_inhosp"), names(train_dat))
   if (length(missing_vars) > 0) {
-    message("Skipping ", combo_name, " because these columns are missing: ",
+    message("Skipping ", combo_name, " because these columns are missing!!!: ",
             paste(missing_vars, collapse = ", "))
     next
   }
@@ -124,12 +124,12 @@ for (comb in combinations) {
     na.omit()
 
   if (nrow(train_sub) < 20 || nrow(test_sub) < 10) {
-    message("Skipping ", combo_name, " due to too few complete cases.")
+    message("Skipping ", combo_name, " due to too few complete cases!!!")
     next
   }
   
   if (length(unique(train_sub$mort_inhosp)) < 2 || length(unique(test_sub$mort_inhosp)) < 2) {
-    message("Skipping ", combo_name, " because one class is missing in train or test.")
+    message("Skipping ", combo_name, " because one class is missing in train or test!!!!!")
     next
   }
   
