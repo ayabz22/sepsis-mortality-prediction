@@ -3,7 +3,7 @@
 #
 # This script fits the final logistic regression model on the
 # training set, evaluates candidate probability thresholds,
-# and then assesses the selected threshold on the test set.
+# and then assesses the selected threshold on the test set (sensitivity analysis).
 # ============================================================
 
 library(caret)
