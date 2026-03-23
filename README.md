@@ -16,8 +16,8 @@ I investigated the relationship between clinical variables, immune biomarkers, a
 - `clinicalscores_biomarkers_table.R`  
   Builds final logistic regression models combining clinical scores and biomarkers.
 
-- `tuning_finalmodel.R`  
-  Implements train/test validation, evaluates model performance on unseen data, and computes metrics such as ΔAUC and NRI.
+- `tuning_finalmodel.R`
+  Evaluates probability thresholds for the final logistic regression model and performs sensitivity analysis to assess how classification performance varies across nearby thresholds.
 
 - `machine_learning_comparison.R`  
   Compares logistic regression, LASSO, random forest, and gradient boosting models using cross-validation and test-set AUC.
