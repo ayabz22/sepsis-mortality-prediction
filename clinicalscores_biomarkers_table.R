@@ -43,10 +43,8 @@ biomarkers <- c(
 
 clinical_scores <- c("qsofa", "lods_score", "sick_score")
 
-# Outcome must be 0/1 for logistic regression
 df$outcome <- ifelse(df$mort_inhosp == "Died", 1, 0)
 
-# Number of folds for cross-validation
 k <- 5
 set.seed(123)
 
@@ -89,7 +87,6 @@ cv_auc_ci <- function(formula_str, data, k = 5) {
 final_table <- tibble()
 
 for (marker in biomarkers) {
-  # Use same patients for all models in this row
   tmp <- df %>%
     select(outcome, all_of(marker), all_of(clinical_scores)) %>%
     na.omit()
@@ -108,7 +105,7 @@ for (marker in biomarkers) {
   final_table <- bind_rows(final_table, row)
 }
 
-# Sort by Alone CV AUC
+# sort by Alone CV AUC
 final_table <- final_table %>%
   arrange(desc(Alone_CV_AUC))
 
