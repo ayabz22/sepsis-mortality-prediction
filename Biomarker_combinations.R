@@ -122,7 +122,7 @@ for (score in clinical_scores) {
       Model = if (nm == "Reference") paste(toupper(score), "Reference") else paste(toupper(score), "+", nm),
       Biomarkers = if (nm == "Reference") "Reference" else nm,
       CV_AUC = res$auc_ci,
-      CV_AUC_num = res$auc,   # <-- numeric for correct sorting
+      CV_AUC_num = res$auc,   
       N = nrow(tmp_train),
       stringsAsFactors = FALSE
     )
@@ -146,13 +146,13 @@ for (score in clinical_scores) {
 
 print(train_results)
 
-# ============================================================
-# 6) TEST EVALUATION HELPERS (NO FITTING ON TEST)
+============================================================
+6) TEST EVALUATION HELPERS (NO FITTING ON TEST)
 # ============================================================
 auc_ci_from_preds <- function(y, p) {
   roc_obj <- roc(y, p, quiet = TRUE)
   auc_val <- as.numeric(auc(roc_obj))
-  ci <- ci.auc(roc_obj)  # DeLong by default
+  ci <- ci.auc(roc_obj)  
   sprintf("%.3f (%.3f–%.3f)", auc_val, ci[1], ci[3])
 }
 
