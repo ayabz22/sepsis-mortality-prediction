@@ -1,3 +1,10 @@
+# ============================================================
+# SICK Score 
+# 
+# This script recreates the weighted SICK score, applies the
+# published high-risk cutoff, and evaluates its performance
+# for in-hospital mortality.
+# ============================================================
 library(dplyr)
 library(pROC)
 library(caret)
@@ -5,7 +12,7 @@ library(caret)
 set.seed(123)
 
 # ===========================
-# 1. Read full dataset
+# 1. Load data 
 # ===========================
 full_df <- read.csv("finalized_dataset.csv", stringsAsFactors = FALSE)
 
@@ -23,7 +30,6 @@ df <- df %>%
                              ifelse(mort_inhosp == "Survived", 0, NA))
   )
 
-# Quick check
 table(df$outcome_numeric, useNA = "ifany")
 
 # ===========================
@@ -41,7 +47,7 @@ df <- df %>%
   )
 
 # ===========================
-# 4. Define individual SICK variables
+# 4. Define individual SICK variables from the paper 
 # ===========================
 df <- df %>%
   mutate(
@@ -111,15 +117,12 @@ df <- df %>%
     sick_high_risk = ifelse(!is.na(sick_score) & sick_score >= 2.5, 1, 0)
   )
 
-# ===========================
-# 8. Quick checks
-# ===========================
 summary(df$sick_score)
 table(df$sick_high_risk, useNA = "ifany")
 head(df$sick_score)
 
 # ===========================
-# 9. ROC and AUC using continuous weighted SICK score
+# 8. ROC and AUC using continuous weighted SICK score
 # ===========================
 roc_df <- df %>%
   filter(!is.na(outcome_numeric), !is.na(sick_score))
@@ -137,7 +140,7 @@ auc_value <- auc(roc_obj)
 print(paste("AUC:", round(auc_value, 3)))
 
 # ===========================
-# 10. Confusion matrix using cutoff 2.5
+# 9. Confusion matrix using cutoff 2.5
 # ===========================
 cm_df <- df %>%
   filter(!is.na(outcome_numeric), !is.na(sick_high_risk))
@@ -153,4 +156,4 @@ df$sick_score
 # ===========================
 # 11. Save updated dataset
 # ===========================
-write.csv(df, "finalized_dataset.csv", row.names = FALSE)
+write.csv(df, "finalized_dataset_with_sick_score.csv", row.names = FALSE)
